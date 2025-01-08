@@ -13,20 +13,20 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 
 interface ItemData {
-  name: string
-  details: string
-  position: string
-  quantity: number
-  plannedQuantity: number  // 添加了计划数量字段
-}
+    name: string
+    details: string
+    position: string
+    quantity: number
+    status: 'match' | 'mismatch' | 'empty' | 'unplanned'  // 添加 status
+  }
 
 interface ItemDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  isEdit?: boolean
-  initialData?: ItemData | null
-  onSubmit: (data: ItemData) => void
-}
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    isEdit?: boolean
+    initialData?: ItemData | null
+    onSubmit: (data: ItemData) => void
+  }
 
 export function ItemDialog({ 
   open, 
@@ -35,13 +35,14 @@ export function ItemDialog({
   initialData = null,
   onSubmit 
 }: ItemDialogProps) {
-  const [formData, setFormData] = useState<ItemData>({
-    name: initialData?.name || '',
-    details: initialData?.details || '',
-    position: initialData?.position || '',
-    quantity: initialData?.quantity || 0,
-    plannedQuantity: initialData?.plannedQuantity || 0  // 添加初始值
-  })
+    const [formData, setFormData] = useState<ItemData>({
+        name: initialData?.name || '',
+        details: initialData?.details || '',
+        position: initialData?.position || '',
+        quantity: initialData?.quantity || 0,
+        status: initialData?.status || 'match'  // 设置默认值
+      })
+    
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,17 +104,6 @@ export function ItemDialog({
                 <Label htmlFor="plannedQuantity">
                   Planned Quantity
                 </Label>
-                <Input
-                  id="plannedQuantity"
-                  type="number"
-                  min="0"
-                  value={formData.plannedQuantity}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev, 
-                    plannedQuantity: parseInt(e.target.value) || 0
-                  }))}
-                  required
-                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="quantity">

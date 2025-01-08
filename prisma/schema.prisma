@@ -1,14 +1,14 @@
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-Copymodel Item {
+model Item {
   id          String   @id @default(cuid())
   name        String   // 物品名称
   details     String?  // 物品详情
