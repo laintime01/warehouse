@@ -3,8 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 
-const prisma = new PrismaClient();
-
+const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.POSTGRES_PRISMA_URL
+      },
+    },
+  });
+  
 async function importData() {
     function getRackNumber(rowIndex: number, colIndex: number): string {
         let baseRack = 0;
