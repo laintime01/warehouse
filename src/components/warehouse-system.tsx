@@ -29,7 +29,6 @@ type Item = {
   details: string
   position: string    // e.g., "A-1-1-01"
   quantity: number
-  plannedQuantity: number
   status: 'match' | 'mismatch' | 'empty' | 'unplanned'
   lastUpdated: Date
 }
@@ -234,100 +233,85 @@ export function WarehouseSystem() {
             </div>
 
             <div className="rounded-lg border shadow-sm">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead>Location</TableHead>
-                    <TableHead>Planned Item</TableHead>
-                    <TableHead>Planned Qty</TableHead>
-                    <TableHead>Actual Item</TableHead>
-                    <TableHead>Actual Qty</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Variance</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-10">
-                        <div className="flex items-center justify-center text-muted-foreground">
-                          Loading...
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-10">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <p>No items found</p>
-                          <Button
-                            variant="link"
-                            onClick={() => {
-                              setEditItem(null)
-                              setDialogOpen(true)
-                            }}
-                            className="mt-2"
-                          >
-                            Add your first item
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredItems.map((item) => {
-                      const variance = item.quantity - item.plannedQuantity
-                      const hasVariance = variance !== 0
-
-                      return (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.position}</TableCell>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell>{item.plannedQuantity}</TableCell>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(item.status)}
-                              <Badge className={getStatusBadge(item.status)}>
-                                {item.status.toUpperCase()}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {hasVariance && (
-                              <span className={variance < 0 ? 'text-red-500' : 'text-green-500'}>
-                                {variance > 0 ? '+' : ''}{variance}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setEditItem(item)
-                                  setDialogOpen(true)
-                                }}
-                              >
-                                Edit
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
+            <Table>
+  <TableHeader>
+    <TableRow className="bg-muted/50">
+      <TableHead>Location</TableHead>
+      <TableHead>Planned Item</TableHead>
+      <TableHead>Actual Item</TableHead>
+      <TableHead>Quantity</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead>Actions</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {loading ? (
+      <TableRow>
+        <TableCell colSpan={6} className="text-center py-10">
+          <div className="flex items-center justify-center text-muted-foreground">
+            Loading...
+          </div>
+        </TableCell>
+      </TableRow>
+    ) : filteredItems.length === 0 ? (
+      <TableRow>
+        <TableCell colSpan={6} className="text-center py-10">
+          <div className="flex flex-col items-center justify-center text-muted-foreground">
+            <p>No items found</p>
+            <Button
+              variant="link"
+              onClick={() => {
+                setEditItem(null)
+                setDialogOpen(true)
+              }}
+              className="mt-2"
+            >
+              Add your first item
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    ) : (
+      filteredItems.map((item) => (
+        <TableRow key={item.id}>
+          <TableCell className="font-medium">{item.position}</TableCell>
+          <TableCell>{item.name}</TableCell>
+          <TableCell>{item.name}</TableCell>
+          <TableCell>{item.quantity}</TableCell>
+          <TableCell>
+            <div className="flex items-center gap-2">
+              {getStatusIcon(item.status)}
+              <Badge className={getStatusBadge(item.status)}>
+                {item.status}
+              </Badge>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEditItem(item)
+                  setDialogOpen(true)
+                }}
+              >
+                Edit
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => handleDelete(item.id)}
+              >
+                Delete
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      ))
+    )}
+  </TableBody>
+</Table>
             </div>
           </CardContent>
         </Card>
