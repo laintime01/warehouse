@@ -17,6 +17,7 @@ interface ItemData {
   details: string
   position: string
   quantity: number
+  plannedQuantity: number  // 添加了计划数量字段
 }
 
 interface ItemDialogProps {
@@ -38,7 +39,8 @@ export function ItemDialog({
     name: initialData?.name || '',
     details: initialData?.details || '',
     position: initialData?.position || '',
-    quantity: initialData?.quantity || 0
+    quantity: initialData?.quantity || 0,
+    plannedQuantity: initialData?.plannedQuantity || 0  // 添加初始值
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,9 +57,7 @@ export function ItemDialog({
             {isEdit ? 'Edit Item' : 'Add New Item'}
           </DialogTitle>
           <DialogDescription>
-            {isEdit 
-              ? 'Edit the details of the existing item.' 
-              : 'Add a new item to the warehouse inventory.'}
+            {isEdit ? 'Edit item details and quantities' : 'Add a new item to the warehouse'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -94,22 +94,43 @@ export function ItemDialog({
                 id="position"
                 value={formData.position}
                 onChange={(e) => setFormData(prev => ({...prev, position: e.target.value}))}
-                placeholder="Enter storage position"
+                placeholder="Enter storage position (e.g., A-1-1-01)"
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="quantity">
-                Quantity
-              </Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="0"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({...prev, quantity: parseInt(e.target.value) || 0}))}
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="plannedQuantity">
+                  Planned Quantity
+                </Label>
+                <Input
+                  id="plannedQuantity"
+                  type="number"
+                  min="0"
+                  value={formData.plannedQuantity}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev, 
+                    plannedQuantity: parseInt(e.target.value) || 0
+                  }))}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="quantity">
+                  Actual Quantity
+                </Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev, 
+                    quantity: parseInt(e.target.value) || 0
+                  }))}
+                  required
+                />
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-3">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -17,7 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Search, Plus } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Search, Plus, Filter, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { ItemDialog } from './item-dialog'
 import { useToast } from "@/hooks/use-toast"
 
@@ -25,8 +27,11 @@ type Item = {
   id: string
   name: string
   details: string
-  position: string
+  position: string    // e.g., "A-1-1-01"
   quantity: number
+  plannedQuantity: number
+  status: 'match' | 'mismatch' | 'empty' | 'unplanned'
+  lastUpdated: Date
 }
 
 export function WarehouseSystem() {
@@ -35,9 +40,9 @@ export function WarehouseSystem() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editItem, setEditItem] = useState<Item | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const { toast } = useToast()
 
-  // 获取所有物品或搜索物品
   const fetchItems = async (search?: string) => {
     try {
       const params = new URLSearchParams()
@@ -59,19 +64,16 @@ export function WarehouseSystem() {
     }
   }
 
-  // 初始加载
   useEffect(() => {
     fetchItems()
   }, [])
 
-  // 搜索功能
   const handleSearch = () => {
     setLoading(true)
     fetchItems(searchQuery)
   }
 
-  // 添加新物品
-  const handleSubmit = async (data: Omit<Item, 'id'>) => {
+  const handleSubmit = async (data: Omit<Item, 'id' | 'status' | 'lastUpdated'>) => {
     try {
       const response = await fetch('/api/items', {
         method: 'POST',
@@ -97,8 +99,7 @@ export function WarehouseSystem() {
     }
   }
 
-  // 编辑物品
-  const handleEdit = async (id: string, data: Omit<Item, 'id'>) => {
+  const handleEdit = async (id: string, data: Omit<Item, 'id' | 'status' | 'lastUpdated'>) => {
     try {
       const response = await fetch(`/api/items/${id}`, {
         method: 'PUT',
@@ -124,7 +125,6 @@ export function WarehouseSystem() {
     }
   }
 
-  // 删除物品
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return
 
@@ -150,6 +150,38 @@ export function WarehouseSystem() {
     }
   }
 
+  const getStatusBadge = (status: Item['status']) => {
+    const styles = {
+      'match': 'bg-green-100 text-green-800',
+      'mismatch': 'bg-red-100 text-red-800',
+      'empty': 'bg-yellow-100 text-yellow-800',
+      'unplanned': 'bg-blue-100 text-blue-800'
+    }
+    return styles[status] || ''
+  }
+
+  const getStatusIcon = (status: Item['status']) => {
+    switch (status) {
+      case 'match':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />
+      case 'mismatch':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case 'empty':
+      case 'unplanned':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />
+    }
+  }
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = 
+      item.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.details.toLowerCase().includes(searchQuery.toLowerCase())
+
+    if (statusFilter === 'all') return matchesSearch
+    return matchesSearch && item.status === statusFilter
+  })
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -164,7 +196,7 @@ export function WarehouseSystem() {
               <div className="flex-1 flex gap-2">
                 <div className="relative flex-1 max-w-md">
                   <Input
-                    placeholder="Search items..."
+                    placeholder="Search locations or items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -179,42 +211,54 @@ export function WarehouseSystem() {
                   Search
                 </Button>
               </div>
-              <Button 
-                onClick={() => {
-                  setEditItem(null)
-                  setDialogOpen(true)
-                }}
-                className="whitespace-nowrap"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Add New Item
-              </Button>
+              <div className="flex gap-2">
+                <Tabs defaultValue="all" onValueChange={setStatusFilter} className="w-[400px]">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="match">Match</TabsTrigger>
+                    <TabsTrigger value="mismatch">Mismatch</TabsTrigger>
+                    <TabsTrigger value="empty">Empty</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button 
+                  onClick={() => {
+                    setEditItem(null)
+                    setDialogOpen(true)
+                  }}
+                  className="whitespace-nowrap"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add New Item
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-lg border shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="w-[100px]">ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead className="w-[100px]">Quantity</TableHead>
-                    <TableHead className="w-[150px]">Actions</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Planned Item</TableHead>
+                    <TableHead>Planned Qty</TableHead>
+                    <TableHead>Actual Item</TableHead>
+                    <TableHead>Actual Qty</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Variance</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
+                      <TableCell colSpan={8} className="text-center py-10">
                         <div className="flex items-center justify-center text-muted-foreground">
                           Loading...
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : items.length === 0 ? (
+                  ) : filteredItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
+                      <TableCell colSpan={8} className="text-center py-10">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <p>No items found</p>
                           <Button
@@ -231,44 +275,103 @@ export function WarehouseSystem() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm">
-                          {item.id.slice(0, 8)}
-                        </TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.details}</TableCell>
-                        <TableCell>{item.position}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                setEditItem(item)
-                                setDialogOpen(true)
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredItems.map((item) => {
+                      const variance = item.quantity - item.plannedQuantity
+                      const hasVariance = variance !== 0
+
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.position}</TableCell>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.plannedQuantity}</TableCell>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(item.status)}
+                              <Badge className={getStatusBadge(item.status)}>
+                                {item.status.toUpperCase()}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {hasVariance && (
+                              <span className={variance < 0 ? 'text-red-500' : 'text-green-500'}>
+                                {variance > 0 ? '+' : ''}{variance}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setEditItem(item)
+                                  setDialogOpen(true)
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Total Locations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{items.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Matching</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {items.filter(l => l.status === 'match').length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Mismatched</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {items.filter(l => l.status === 'mismatch').length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Empty</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {items.filter(l => l.status === 'empty').length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <ItemDialog 
@@ -276,7 +379,7 @@ export function WarehouseSystem() {
         onOpenChange={setDialogOpen}
         isEdit={!!editItem}
         initialData={editItem}
-        onSubmit={(data: Omit<Item, 'id'>) => {
+        onSubmit={(data) => {
           if (editItem) {
             handleEdit(editItem.id, data)
           } else {
